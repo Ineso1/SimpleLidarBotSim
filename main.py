@@ -1,21 +1,44 @@
 import numpy as np
-import time
-from LidarBot.map_handler import MyMap
-from LidarBot.my_bot import MyBot 
-from Exploration.exploration_strategy import FrontierExploration
+import matplotlib.pyplot as plt
+from LidarBot.my_bot import MyBot
+from Exploration.random_exploration import run_random_exploration
+
+def plot_occupancy_map(occupancy_map):
+    """Visualizes the occupancy map."""
+    # Create a figure and axis for plotting
+    plt.figure(figsize=(6, 6))
+    
+    # Plot the occupancy map
+    # -1: unknown, 0: free, 1: occupied
+    plt.imshow(occupancy_map, cmap='gray', origin='lower', interpolation='nearest')
+    plt.colorbar(label="Occupancy")
+    plt.title("Occupancy Map")
+    plt.xlabel("Grid X")
+    plt.ylabel("Grid Y")
+    plt.show()
 
 def main():
-    # Load the real map to initialize high-level robot interface
-    m = MyMap("map1.png", grid_resolution=0.1, desired_size=5, show_grid=True)
-    bot = MyBot(map_data=m, initial_pose=(2.0, 3.0, 0.0))
+    # Initialize the bot at a chosen starting pose within the 5x5 map
+    initial_pose = (1.0, 2.0, np.pi / 2)  # x, y, heading (facing upward)
+    bot = MyBot(initial_pose=initial_pose)
 
-    # Set a static target for now
-    bot.set_goal(position=(1.0, 2.0), angle=np.pi/2)
+    # Parameters for exploration
+    total_steps = 300           # Total number of simulation steps
+    replan_interval = 20        # How often to choose a new random goal
+    exploration_radius = 0.5    # Max distance to attempt traveling each replan
 
-    # Run simulation
-    bot.run(steps=200)
+    # Start the random exploration
+    run_random_exploration(
+        bot=bot,
+        steps=total_steps,
+        replan_interval=replan_interval,
+        radius=exploration_radius
+    )
 
-    # Animate result
+    # Visualize the occupancy map after the exploration
+    plot_occupancy_map(bot.occupancy_map)
+
+    # Visualize the path and explored areas
     bot.animate()
 
 if __name__ == "__main__":

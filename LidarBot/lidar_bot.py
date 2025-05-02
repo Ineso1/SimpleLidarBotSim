@@ -3,10 +3,14 @@ from .lidar_bot_data import LidarBotData
 from .pid import PIDController
 from .scan import SimulatedLaserScan
 from .lidar import Lidar
+from .map_handler import MyMap
+import os
 
 class LidarBot(Lidar):
-    def __init__(self, map_data, pose=(2.0, 3.0, 0.0), max_distance=1.5, noise_stddev=0.01, robot_radius=0.2):
+    def __init__(self, pose=(2.0, 3.0, 0.0), max_distance=1.5, noise_stddev=0.01, robot_radius=0.2):
         super().__init__(max_distance=max_distance, noise_stddev=noise_stddev)
+        map_path = os.path.join(os.path.dirname(__file__), "..", "map1.png")
+        map_data = MyMap(map_path, grid_resolution=0.1, desired_size=5, show_grid=True)
         self.pose = pose
         self.map = map_data
         self.robot_radius = robot_radius
