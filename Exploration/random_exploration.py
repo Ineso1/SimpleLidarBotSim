@@ -1,3 +1,5 @@
+"ESA VAINA SI JALA, PERO MAL XD, no evita coliciones"
+
 import random
 import numpy as np
 from LidarBot.my_bot import MyBot

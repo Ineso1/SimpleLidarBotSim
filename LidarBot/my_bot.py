@@ -23,7 +23,6 @@ class MyBot:
 
 
     def step(self):
-        """One simulation step: scan, control, update"""
         self.robot.perform_scan()
         lidar_msg = self.get_lidar_msg()
         self.update_map_from_lidar(lidar_msg)
@@ -32,7 +31,6 @@ class MyBot:
         return lidar_msg
 
     def run(self, steps=200):
-        """Runs the robot for a number of time steps"""
         for _ in range(steps):
             self.step()
 
@@ -44,7 +42,6 @@ class MyBot:
         return self.robot.pose
 
     def get_lidar_msg(self):
-        """Returns the current LiDAR scan as a dictionary (ROS-like message structure)"""
         scan = self.robot.scan
         return {
             "angle_min": scan.angle_min,
@@ -59,7 +56,6 @@ class MyBot:
         }
     
     def update_map_from_lidar(self, scan_msg):
-        """Update occupancy grid using a LiDAR scan"""
         x, y, theta = self.robot.pose
         angle = scan_msg["angle_min"]
         for r in scan_msg["ranges"]:
@@ -68,10 +64,8 @@ class MyBot:
                 hit_x = x + r * np.cos(angle_world)
                 hit_y = y + r * np.sin(angle_world)
 
-                # Mark hit cell as occupied
                 self.occupancy_map.set_occupancy(hit_x, hit_y, 0.0)
 
-                # Mark cells along the ray as free
                 num_steps = int(r / self.occupancy_map.resolution)
                 for i in range(num_steps):
                     intermediate_r = i * self.occupancy_map.resolution

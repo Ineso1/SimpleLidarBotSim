@@ -66,7 +66,6 @@ class LidarBotData:
 
         fig, ax = plt.subplots(figsize=(6, 6))
 
-        # Draw the map
         ax.imshow(~self.map.occupancy_grid, cmap='gray', origin='upper',
                 extent=[0, self.map.width * self.map.grid_resolution, 0, self.map.height * self.map.grid_resolution])
         ax.set_aspect('equal')
@@ -99,7 +98,6 @@ class LidarBotData:
                 [ys[frame], ys[frame] + dy]
             )
 
-            # Lidar rays
             if hasattr(self, 'scan_history'):
                 scan = self.scan_history[frame]
                 angle_min = scan['angle_min']
@@ -132,15 +130,12 @@ class LidarBotData:
 
         fig, ax = plt.subplots(figsize=(6, 6))
         
-        # Draw map
         ax.imshow(~self.map.occupancy_grid, cmap='gray', origin='upper',
                 extent=[0, self.map.width * self.map.grid_resolution,
                         0, self.map.height * self.map.grid_resolution])
         
-        # Draw robot
         ax.plot(x0, y0, 'ro', label="Robot")
 
-        # Draw LIDAR rays
         for angle, dist in zip(angles, ranges):
             end_x = x0 + dist * np.cos(angle + theta)
             end_y = y0 + dist * np.sin(angle + theta)
@@ -160,7 +155,6 @@ class LidarBotData:
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
-        # Robot environment view
         ax1.set_title("Robot on Environment Map")
         env_img = ax1.imshow(~self.map.occupancy_grid, cmap='gray', origin='upper',
                             extent=[0, self.map.width * self.map.grid_resolution,
@@ -190,7 +184,6 @@ class LidarBotData:
             return [env_img, map_img, path_line, robot_marker, direction_line] + lidar_rays
 
         def update(frame):
-            # Update robot path
             path_line.set_data(xs[:frame], ys[:frame])
             robot_marker.set_data([xs[frame]], [ys[frame]])
             dx = 0.2 * np.cos(thetas[frame])
@@ -198,7 +191,6 @@ class LidarBotData:
             direction_line.set_data([xs[frame], xs[frame] + dx],
                                     [ys[frame], ys[frame] + dy])
 
-            # Lidar rays
             if hasattr(self, 'scan_history'):
                 scan = self.scan_history[frame]
                 angle_min = scan['angle_min']
@@ -214,7 +206,6 @@ class LidarBotData:
                     y1 = y0 + r * np.sin(angle)
                     lidar_rays[i].set_data([x0, x1], [y0, y1])
 
-            # Update occupancy map from history (if available)
             if frame < len(occupancy_map.history):
                 map_img.set_data(1 - occupancy_map.history[frame])
 

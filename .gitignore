@@ -1,0 +1,48 @@
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+__pycache__/
+
+# Ignore virtual environment directories
+env/
+venv/
+
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore system files (macOS)
+.DS_Store
+
+# Ignore editor backup files (e.g., Vim, Emacs, etc.)
+*~
+*.swp
+*.swo
+
+# Ignore log files
+*.log
+
+# Ignore cache folders or files
+.cache/
+*.cache
+
+# Ignore coverage reports
+.coverage
+coverage.xml
+*.coveragerc
+nosetests.xml
+test_*.xml
+
+# Ignore IDE-specific files (VS Code, PyCharm, etc.)
+.vscode/
+.idea/
+
+# Ignore npm or other dependency managers
+node_modules/
+
+# Ignore other temporary files and directories
+*.bak
+*.tmp
+*.swp
+
+# Ignore video files (if not needed for the repo)
+robot_mapping.mp4
