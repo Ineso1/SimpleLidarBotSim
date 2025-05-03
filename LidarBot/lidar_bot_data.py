@@ -149,7 +149,7 @@ class LidarBotData:
         plt.show()
 
 
-    def animate_bot_with_mapping(self, occupancy_map):
+    def animate_bot_with_mapping(self, occupancy_map, filename="robot_mapping.mp4"):
         poses = np.array(self.pose_history)
         xs, ys, thetas = poses[:, 0], poses[:, 1], poses[:, 2]
 
@@ -170,9 +170,9 @@ class LidarBotData:
 
         ax2.set_title("Occupancy Map Being Built")
         map_img = ax2.imshow(1 - occupancy_map.occupancy_grid, cmap='gray', origin='lower',
-                     extent=[-5.5, 5.5, -5.5, 5.5], vmin=0, vmax=1)
-        ax2.set_xlim(-0.5, 5.5)
-        ax2.set_ylim(-0.5, 5.5)
+                    extent=[-7.5, 10.5, -7.5, 10.5], vmin=0, vmax=1)
+        ax2.set_xlim(-7.5, 10.5)
+        ax2.set_ylim(-7.5, 10.5)
         ax2.set_aspect('equal')
 
         def init():
@@ -213,7 +213,10 @@ class LidarBotData:
 
         ani = animation.FuncAnimation(fig, update, frames=len(xs), init_func=init,
                                     blit=True, interval=1, repeat=False)
-        plt.tight_layout()
-        plt.show()
+
+        # Save the animation as a video file
+        writer = animation.FFMpegWriter(fps=30, bitrate=1800)
+        ani.save(filename, writer=writer)
+        plt.close(fig)
 
 

@@ -4,7 +4,7 @@ from Exploration.occupancy_map import OccupancyMap
 
 
 class MyBot:
-    def __init__(self, initial_pose=(2.0, 3.0, 0.0), map_size=5.0, resolution=0.1):
+    def __init__(self, initial_pose=(2.0, 3.0, 0.0), map_size=5.0, resolution=0.01):
         self.robot = LidarBot(pose=initial_pose)
         self.exploration_strategy = None
         self.trajectory_generator = None

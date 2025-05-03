@@ -17,7 +17,7 @@ class LidarBot(Lidar):
         self.scan = SimulatedLaserScan(
             angle_min=-np.pi,
             angle_max=np.pi,
-            angle_increment= np.pi / 15,
+            angle_increment= np.pi / 30,
             range_min=0.05,
             range_max=max_distance
         )
