@@ -25,7 +25,7 @@ What the Script Does:
 - **Starts** the project by running `main.py`.
 
 ### 🎥 Project Demo
-![testWaypoints1](https://github.com/user-attachments/assets/38e9395f-f52e-45fe-9c22-ade04c29505c)
+![mapping](https://github.com/user-attachments/assets/a1ae3053-0d9c-4c42-a7df-4ea5f1b1fbaa)
 
 Watch the demo of the project below:
 
