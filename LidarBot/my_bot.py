@@ -1,5 +1,7 @@
 import numpy as np
 from .lidar_bot import LidarBot
+from Exploration.occupancy_map import OccupancyMap 
+
 
 class MyBot:
     def __init__(self, initial_pose=(2.0, 3.0, 0.0), map_size=5.0, resolution=0.1):
@@ -9,30 +11,33 @@ class MyBot:
         self.dt = 0.1
         self.map_size = map_size
         self.resolution = resolution
-        
-        # Calculate the size of the occupancy grid
-        self.grid_size = int(self.map_size / self.resolution)
-        # Create an empty occupancy map (0 = free, 1 = occupied, -1 = unknown)
-        self.occupancy_map = -np.ones((self.grid_size, self.grid_size))
+        self.pointAchived = False
+        self.occupancy_map = OccupancyMap(initial_size=100, resolution=resolution)
+
 
     def set_goal(self, position, angle=np.pi / 2, velocity=(0.0, 0.0, 0.0)):
         self.robot.set_target(position, velocity, angle)
+        self.robot.pid_x.done = False
+        self.robot.pid_y.done = False
+        self.robot.pid_theta.done = False
+
 
     def step(self):
         """One simulation step: scan, control, update"""
         self.robot.perform_scan()
         lidar_msg = self.get_lidar_msg()
+        self.update_map_from_lidar(lidar_msg)
         self.robot.apply_control(self.dt)
-        self.robot.update(self.dt)
-        
-        # Update the occupancy map based on the LiDAR scan
-        self.update_occupancy_map()
-        
+        self.robot.update(self.dt)        
         return lidar_msg
 
     def run(self, steps=200):
         """Runs the robot for a number of time steps"""
         for _ in range(steps):
+            self.step()
+
+    def loop(self):
+        while not (self.robot.pid_x.done and self.robot.pid_y.done and self.robot.pid_theta.done):
             self.step()
 
     def get_pose(self):
@@ -52,54 +57,34 @@ class MyBot:
             "frame_id": scan.header.get("frame_id", "laser_frame"),
             "stamp": scan.header.get("stamp", 0),
         }
+    
+    def update_map_from_lidar(self, scan_msg):
+        """Update occupancy grid using a LiDAR scan"""
+        x, y, theta = self.robot.pose
+        angle = scan_msg["angle_min"]
+        for r in scan_msg["ranges"]:
+            if scan_msg["range_min"] <= r <= scan_msg["range_max"]:
+                angle_world = theta + angle
+                hit_x = x + r * np.cos(angle_world)
+                hit_y = y + r * np.sin(angle_world)
 
-    def update_occupancy_map(self):
-        """Update the occupancy map using the current LiDAR scan."""
-        scan = self.robot.scan
-        angle_min = scan.angle_min
-        angle_increment = scan.angle_increment
-        ranges = scan.ranges
-        
-        # Get the robot's current position
-        x, y, theta = self.get_pose()
+                # Mark hit cell as occupied
+                self.occupancy_map.set_occupancy(hit_x, hit_y, 0.0)
 
-        # Log the current pose for debugging
-        print(f"Current pose: x={x}, y={y}, theta={theta}")
-
-        # Mark the robot's current position as free
-        grid_x, grid_y = self.world_to_grid(x, y)
-        print(f"Robot grid position: grid_x={grid_x}, grid_y={grid_y}")
-        self.occupancy_map[grid_x, grid_y] = 0  # Free space
-
-        # Update the map based on LiDAR readings
-        for i, distance in enumerate(ranges):
-            if np.isinf(distance) or np.isnan(distance):
-                continue
-
-            angle = angle_min + i * angle_increment
-            lx = x + distance * np.cos(angle)
-            ly = y + distance * np.sin(angle)
-
-            grid_lx, grid_ly = self.world_to_grid(lx, ly)
-            if self.is_within_map(grid_lx, grid_ly):
-                self.occupancy_map[grid_lx, grid_ly] = 1  # Occupied
-
-
-    def world_to_grid(self, world_x, world_y):
-        """Converts world coordinates (x, y) to grid coordinates, ensuring they stay within bounds."""
-        grid_x = int((world_x / self.resolution) + self.grid_size / 2)
-        grid_y = int((world_y / self.resolution) + self.grid_size / 2)
-
-        # Ensure the grid coordinates are within bounds
-        grid_x = np.clip(grid_x, 0, self.grid_size - 1)
-        grid_y = np.clip(grid_y, 0, self.grid_size - 1)
-
-        return grid_x, grid_y
-
-
-    def is_within_map(self, grid_x, grid_y):
-        """Check if grid coordinates are within the map bounds."""
-        return 0 <= grid_x < self.grid_size and 0 <= grid_y < self.grid_size
+                # Mark cells along the ray as free
+                num_steps = int(r / self.occupancy_map.resolution)
+                for i in range(num_steps):
+                    intermediate_r = i * self.occupancy_map.resolution
+                    fx = x + intermediate_r * np.cos(angle_world)
+                    fy = y + intermediate_r * np.sin(angle_world)
+                    self.occupancy_map.set_occupancy(fx, fy, 1.0)
+            angle += scan_msg["angle_increment"]
+        self.occupancy_map.history.append(self.occupancy_map.occupancy_grid.copy())
+        print(len(self.occupancy_map.history))
 
     def animate(self):
         self.robot.data.animate_bot_on_map()
+        self.occupancy_map.plot()
+
+    def animate2(self):
+        self.robot.data.animate_bot_with_mapping(self.occupancy_map)

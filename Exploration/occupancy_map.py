@@ -1,53 +1,114 @@
 import numpy as np
-from bresenham import bresenham
+import matplotlib.pyplot as plt
 
 class OccupancyMap:
-    def __init__(self, size_meters=5.0, resolution=0.05):
-        self.size_meters = size_meters
-        self.resolution = resolution  # meters per cell
-        self.grid_size = int(size_meters / resolution)
-        self.map = -1 * np.ones((self.grid_size, self.grid_size), dtype=np.int8)  # -1 = unknown
+    def __init__(self, initial_size=100, resolution=0.1):
+        """
+        initial_size: number of grid cells in each dimension (map is square initially)
+        resolution: size of each grid cell in meters
+        """
+        self.resolution = resolution
+        self.width = initial_size
+        self.height = initial_size
+
+        # Grid initialized to 0.5 (unknown); shape: (height, width)
+        self.occupancy_grid = 0.5 * np.ones((self.height, self.width), dtype=np.float32)
+
+        # Origin (world coordinate corresponding to grid index (0, 0))
+        self.origin_x = - (self.width // 2) * resolution
+        self.origin_y = - (self.height // 2) * resolution
+
+        self.history = []
 
     def world_to_grid(self, x, y):
-        i = int(y / self.resolution)
-        j = int(x / self.resolution)
+        """Convert world coordinates to grid indices (i, j)."""
+        j = int((x - self.origin_x) / self.resolution)
+        i = int((y - self.origin_y) / self.resolution)
         return i, j
 
-    def update_from_scan(self, bot):
-        scan = bot.get_lidar_msg()
-        x, y, theta = bot.get_pose()
-        angle_min = scan["angle_min"]
-        angle_increment = scan["angle_increment"]
-        ranges = scan["ranges"]
+    def grid_to_world(self, i, j):
+        """Convert grid indices to world coordinates (x, y)."""
+        x = self.origin_x + j * self.resolution
+        y = self.origin_y + i * self.resolution
+        return x, y
 
-        robot_i, robot_j = self.world_to_grid(x, y)
-        self.mark_cell(robot_i, robot_j, 0)  # Robot's own cell is free
+    def is_in_bounds(self, i, j):
+        return 0 <= i < self.height and 0 <= j < self.width
 
-        for idx, dist in enumerate(ranges):
-            if np.isinf(dist) or np.isnan(dist):
-                continue
-            if dist > 5.0:  # Ignore very far hits
-                continue
+    def expand_to_include(self, x, y):
+        """Expand the map if the point (x, y) lies outside the current grid."""
+        i, j = self.world_to_grid(x, y)
+        needs_expand = not self.is_in_bounds(i, j)
 
-            angle = theta + angle_min + idx * angle_increment
-            hit_x = x + dist * np.cos(angle)
-            hit_y = y + dist * np.sin(angle)
+        if not needs_expand:
+            return
 
-            hit_i, hit_j = self.world_to_grid(hit_x, hit_y)
-            if 0 <= hit_i < self.grid_size and 0 <= hit_j < self.grid_size:
-                self.mark_cell(hit_i, hit_j, 1)  # Hit is an obstacle
-                self._mark_ray(robot_i, robot_j, hit_i, hit_j)
+        # Compute new dimensions and offsets
+        min_x = min(self.origin_x, x - 5 * self.resolution)
+        min_y = min(self.origin_y, y - 5 * self.resolution)
+        max_x = max(self.origin_x + self.width * self.resolution, x + 5 * self.resolution)
+        max_y = max(self.origin_y + self.height * self.resolution, y + 5 * self.resolution)
 
-    def mark_cell(self, i, j, value):
-        if 0 <= i < self.grid_size and 0 <= j < self.grid_size:
-            self.map[i, j] = value
+        new_width = int(np.ceil((max_x - min_x) / self.resolution))
+        new_height = int(np.ceil((max_y - min_y) / self.resolution))
 
-    def _mark_ray(self, i0, j0, i1, j1):
-        for i, j in bresenham(j0, i0, j1, i1):  # bresenham uses (x, y) order
-            self.mark_cell(j, i, 0)
+        # Create new grid
+        new_grid = 0.5 * np.ones((new_height, new_width), dtype=np.float32)
 
-    def save_map(self, filename='map.npy'):
-        np.save(filename, self.map)
+        # Compute offset
+        offset_i = int((self.origin_y - min_y) / self.resolution)
+        offset_j = int((self.origin_x - min_x) / self.resolution)
 
-    def load_map(self, filename='map.npy'):
-        self.map = np.load(filename)
+        # Copy old grid into new grid
+        new_grid[offset_i:offset_i + self.height, offset_j:offset_j + self.width] = self.occupancy_grid
+
+        # Update map info
+        self.occupancy_grid = new_grid
+        self.height = new_height
+        self.width = new_width
+        self.origin_x = min_x
+        self.origin_y = min_y
+
+    def set_occupancy(self, x, y, value):
+        """Set occupancy value at a specific world coordinate."""
+        self.expand_to_include(x, y)
+        i, j = self.world_to_grid(x, y)
+        self.occupancy_grid[i, j] = value
+
+    def get_occupancy(self, x, y):
+        """Get occupancy value at a specific world coordinate."""
+        if not self.is_in_bounds(*self.world_to_grid(x, y)):
+            return 0.5  # Unknown
+        i, j = self.world_to_grid(x, y)
+        return self.occupancy_grid[i, j]
+
+    def draw_grid(self, ax=None):
+        """Optional: draw the grid lines for visualization."""
+        if ax is not None:
+            for x in np.arange(self.origin_x, self.origin_x + self.width * self.resolution, self.resolution):
+                ax.axvline(x, color='gray', lw=0.1)
+            for y in np.arange(self.origin_y, self.origin_y + self.height * self.resolution, self.resolution):
+                ax.axhline(y, color='gray', lw=0.1)
+
+    def plot(self, show_grid=True):
+        """Visualize the occupancy map."""
+        fig, ax = plt.subplots(figsize=(6, 6))
+        extent = [
+            self.origin_x,
+            self.origin_x + self.width * self.resolution,
+            self.origin_y,
+            self.origin_y + self.height * self.resolution,
+        ]
+        ax.imshow(
+            1 - self.occupancy_grid,  # flip so 0=black (occupied), 1=white (free)
+            cmap='gray',
+            origin='lower',
+            extent=extent
+        )
+        ax.set_title("Occupancy Map")
+        ax.set_xlabel("X (m)")
+        ax.set_ylabel("Y (m)")
+        ax.set_aspect('equal')
+        if show_grid:
+            self.draw_grid(ax)
+        plt.show()

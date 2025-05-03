@@ -7,7 +7,7 @@ from .map_handler import MyMap
 import os
 
 class LidarBot(Lidar):
-    def __init__(self, pose=(2.0, 3.0, 0.0), max_distance=1.5, noise_stddev=0.01, robot_radius=0.2):
+    def __init__(self, pose=(2.0, 3.0, 0.0), max_distance=2.5, noise_stddev=0.01, robot_radius=0.2):
         super().__init__(max_distance=max_distance, noise_stddev=noise_stddev)
         map_path = os.path.join(os.path.dirname(__file__), "..", "map1.png")
         map_data = MyMap(map_path, grid_resolution=0.1, desired_size=5, show_grid=True)
@@ -17,13 +17,13 @@ class LidarBot(Lidar):
         self.scan = SimulatedLaserScan(
             angle_min=-np.pi,
             angle_max=np.pi,
-            angle_increment=np.pi / 15,  # 30 beams
+            angle_increment= np.pi / 15,
             range_min=0.05,
             range_max=max_distance
         )
 
-        self.pid_x = PIDController(1.0, 0.0, 0.0, 0.02)  
-        self.pid_y = PIDController(1.0, 0.0, 0.0, 0.02)  
+        self.pid_x = PIDController(0.4, 0.0, 0.05, 0.02)  
+        self.pid_y = PIDController(0.4, 0.0, 0.05, 0.02)  
         self.pid_theta = PIDController(1.0, 0.0, 0.0, 0.1) 
         
         self.vx = 0.0
@@ -58,7 +58,7 @@ class LidarBot(Lidar):
         self.scan.ranges.clear()
         self.scan.intensities.clear()
         angles = np.arange(self.scan.angle_min, self.scan.angle_max, self.scan.angle_increment)
-        x0, y0, theta = self.pose  # <- include theta
+        x0, y0, theta = self.pose
         for angle in angles:
             world_angle = angle + theta  # Rotate by robot orientation
             hit_x, hit_y = self.measure(self.pose, self.map, world_angle)

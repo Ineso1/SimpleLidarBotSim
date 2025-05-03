@@ -14,7 +14,7 @@ def is_clear_of_obstacles(x, y, bot, radius=ROBOT_DIAMETER + SAFETY_MARGIN):
     angle_min = scan["angle_min"]
     angle_increment = scan["angle_increment"]
     ranges = scan["ranges"]
-    robot_x, robot_y, robot_theta = bot.get_pose()  # Get the robot's current pose
+    robot_x, robot_y, robot_theta = bot.get_pose() 
 
     for angle_idx, distance in enumerate(ranges):
         if np.isinf(distance) or np.isnan(distance):
@@ -27,9 +27,9 @@ def is_clear_of_obstacles(x, y, bot, radius=ROBOT_DIAMETER + SAFETY_MARGIN):
         dy = y - robot_y
 
         if np.sqrt(dx**2 + dy**2) < radius and distance > np.sqrt(dx**2 + dy**2):
-            return True  # There's no obstacle in the way
+            return True  
 
-    return False  # Obstacle detected
+    return False 
 
 def generate_random_goal_from_lidar(bot, radius=1.0, max_attempts=30):
     try:
@@ -43,7 +43,7 @@ def generate_random_goal_from_lidar(bot, radius=1.0, max_attempts=30):
 
     if not ranges:
         print("Error: LiDAR scan data is empty.")
-        return bot.get_pose()[:2], bot.get_pose()[2]  # Fallback to current position
+        return bot.get_pose()[:2], bot.get_pose()[2]   
 
     for _ in range(max_attempts):
         i = random.randint(0, len(ranges) - 1)

@@ -9,6 +9,7 @@ class PIDController:
         self.desire_pos = 0
         self.desire_vel = 0
         self.thresh = thresh
+        self.done = False
 
     def reset(self):
         self.integral = 0
@@ -25,4 +26,5 @@ class PIDController:
         output = self.kp * pos_error + self.ki * self.integral + self.kd * derivative
         if abs(pos_error) < self.thresh:
             output = 0.0
+            self.done = True
         return output
