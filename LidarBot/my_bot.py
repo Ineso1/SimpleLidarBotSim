@@ -82,3 +82,4 @@ class MyBot:
 
     def animate2(self):
         self.robot.data.animate_bot_with_mapping(self.occupancy_map)
+

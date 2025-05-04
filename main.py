@@ -1,8 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from LidarBot.my_bot import MyBot
+from LidarBot.my_bot2 import MyBot
 
+count = 0
 def main():
+
+    bot = MyBot()
+    bot.set_goal((4.0, 3.0))  # Set target position
+    
+    count = count + 1
+
+    if count < 10:    
+        bot.loop()  # Start autonomous navigation
+    bot.animate2()  # Visualize the results
+
+
+'''
     initial_pose = (1.0, 1.0, 0.0)
     bot = MyBot(initial_pose=initial_pose)
 
@@ -22,6 +35,7 @@ def main():
         bot.loop()
 
     bot.animate2()
+'''
 
 if __name__ == "__main__":
     main()

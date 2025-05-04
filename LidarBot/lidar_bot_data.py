@@ -149,7 +149,7 @@ class LidarBotData:
         plt.show()
 
 
-    def animate_bot_with_mapping(self, occupancy_map, filename="robot_mapping.mp4"):
+    def animate_bot_with_mapping(self, occupancy_map, filename="robot_mappinggggg.mp4"):
         poses = np.array(self.pose_history)
         xs, ys, thetas = poses[:, 0], poses[:, 1], poses[:, 2]
 
